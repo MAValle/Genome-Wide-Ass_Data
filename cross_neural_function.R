@@ -16,6 +16,7 @@ cross_neural <- function(df, f, k = 10, proport = 0.8, umbral = 0.5, hidden_numb
   npredic <- ncol(df) # numero de columnas
   performance <- matrix(NA, ncol=7, nrow = k)
   for(i in seq_along(1:k)){
+    print(i)
     # generating the train and test sets
     index <- sample(1:nrow(df),round(proport*nrow(df)))
     train.cv <- df[index,]
@@ -29,7 +30,7 @@ cross_neural <- function(df, f, k = 10, proport = 0.8, umbral = 0.5, hidden_numb
     # Predict with the Test set
     pr.nn <- predict(nn, test.cv[ , 2:npredic], type="class")
     # a binario
-    preds2 <-  ifelse(pr.nn  > umbral, 1, 0)
+    preds2 <-  ifelse(pr.nn  > umbral, 1, -1)
     
     # # # calculo de curva roc promedio.
     # promedio burdo de las curvas roc.
@@ -40,7 +41,8 @@ cross_neural <- function(df, f, k = 10, proport = 0.8, umbral = 0.5, hidden_numb
     
     # Creating confusion matrix
     #table(preds2, test.cv[,6])
-    cm <- as.matrix(table(Actual = test.cv[, 1], Predicted = preds2)) # create the confusion matrix
+    orignal_class <- as.data.frame(test.cv[,1])
+    cm <- as.matrix(table(Actual = as.numeric(orignal_class[,1]), Predicted = as.numeric(preds2))) # create the confusion matrix
     # calculo de medidas de desempeno
     # https://blog.revolutionanalytics.com/2016/03/com_class_eval_metrics_r.html
     

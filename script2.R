@@ -31,7 +31,7 @@
 
 
 # Notes:
-# 07 julio 2019: Para encontrar la performance en funcion del umbra y del numero
+# 07 julio 2019: Para encontrar la performance en funcion del umbral y del numero
 #   de nodos en el hidden layer, vemos que a veces la red neuronal se cae, y el for
 #   loop se detiene. Para evitar eso, y que el proceso continue, podemos utilizar 
 #   el comando try y tryCatch:
@@ -41,6 +41,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # DATA LOADING
 rm(list = ls())
+library(tidyr) #para wide to long
 library(tidyverse)
 library(caret)
 library(neuralnet)
@@ -48,7 +49,9 @@ library(pROC)
 library(data.table)
 library(plyr) 
 library(ggplot2)
-load("workdata_for_script2.RData")
+#load("workdata_for_script2.RData")
+#load("workdata_for_script2_altn3.RData") # trabajamos con df que esta depurada.
+load("workdata_for_script2_altn4.RData") # trabajamos con df que esta depurada.
 source("cross_neural_function.R")
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
@@ -59,8 +62,27 @@ source("cross_neural_function.R")
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Lectura de datos selecciuon de variables 
 #solucion con data.table (mas rapido)
-#myvars <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "GSA-rs10974573_G", "GSA-rs564171_G", "rs725124_C", "rs7173347_C") #alternativa 1
-myvars <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "rs725124_C", "rs7173347_C") #alternativa 2
+# myvars <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "GSA-rs10974573_G", "GSA-rs564171_G", "rs725124_C", "rs7173347_C", "GSA-rs2899557") #alternativa 1
+# myvars <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "rs725124_C", "rs7173347_C") #alternativa 2
+# myvars <- c("PHENOTYPE", "rs725124_C","rs7173347_C", "rs1060419_A", "rs943099_T", "rs2497446_A", "rs754497_T", "rs7597221_A", "rs11009438_A",
+#             "rs750976_T", "rs2050935_C", "rs35935082_T", "rs12975577_T", "exm2269383_C", 
+#             "GSA-rs10974573_G", "GSA-rs564171_G", "GSA-rs11096969_T", "GSA-rs11130489_T", "GSA-rs474179_C", "GSA-rs868823_G", "GSA-rs12495172_A")
+            # alternativa 3
+myvars <- c("PHENOTYPE", "rs725124_C","rs7173347_C", "rs1060419_A", "rs943099_T", "rs2497446_A", "rs754497_T", "rs7597221_A", "rs11009438_A",
+            "rs750976_T", "rs2050935_C", "rs35935082_T", "rs12975577_T", "exm2269383_C", 
+            "GSA-rs10974573_G", "GSA-rs564171_G", "GSA-rs11096969_T", "GSA-rs11130489_T", "GSA-rs474179_C", "GSA-rs868823_G", "GSA-rs12495172_A",
+            "rs2167107_C",
+            "GSA-rs10215532_A",
+            "rs4949960_C",
+            "rs7514649_A",
+            "rs12999695_A",
+            "rs17432446_T",
+            "rs11254946_T",
+            "rs36063745_T",
+            "rs2836496_C",
+            "GSA-rs2899557_A")
+            # alternativa 4 - 08-aug-19
+
 
 
 DT <- fread("~/Dropbox/Research/PAPER Pato_Genetica/genotypes original pato jun19.csv")
@@ -69,13 +91,35 @@ DT2 <- DT[, myvars, with=FALSE]
 data <- DT2
 
 rm(myvars, DT, DT2)
-save.image("~/Dropbox/Research/PAPER Pato_Genetica/Genome-Wide-Ass_Data/workdata_for_script2.RData")
+# las variables que tienen gion "-" hay que renombrarlas: para alternativa 1
+# renombrar <- c("GSA-rs10974573_G", "GSA-rs564171_G")
+# names(data)[names(df) %in% renombrar ] <- c("GSA_rs10974573_G", "GSA_rs564171_G")
+# rm(renombrar, cross_neural)
+
+# las variables que tienen gion "-" hay que renombrarlas: para alternativa 3
+# renombrar <- c("GSA-rs10974573_G", "GSA-rs564171_G", "GSA-rs11096969_T", "GSA-rs11130489_T", "GSA-rs474179_C", "GSA-rs868823_G", "GSA-rs12495172_A")
+# names(df)[names(df) %in% renombrar ] <- c("GSA_rs10974573_G", "GSA_rs564171_G", "GSA_rs11096969_T", "GSA_rs11130489_T", "GSA_rs474179_C", "GSA_rs868823_G", "GSA_rs12495172_A")
+# rm(renombrar, cross_neural)
+
+
+# las variables que tienen gion "-" hay que renombrarlas: para alternativa 4 - 08-aug-19
+renombrar <- c("GSA-rs10974573_G", "GSA-rs564171_G", "GSA-rs11096969_T", "GSA-rs11130489_T", "GSA-rs474179_C", "GSA-rs868823_G", "GSA-rs12495172_A", "GSA-rs10215532", "GSA-rs2899557")
+names(df)[names(df) %in% renombrar ] <- c("GSA_rs10974573_G", "GSA_rs564171_G", "GSA_rs11096969_T", "GSA_rs11130489_T", "GSA_rs474179_C", "GSA_rs868823_G", "GSA_rs12495172_A", "GSA_rs10215532", "GSA_rs2899557")
+rm(renombrar, cross_neural)
+
+
+#save.image("~/Dropbox/Research/PAPER Pato_Genetica/Genome-Wide-Ass_Data/workdata_for_script2.RData") # con alternativa 1
+save.image("~/Dropbox/Research/PAPER Pato_Genetica/Genome-Wide-Ass_Data/workdata_for_script2_altn1.RData") # con alternativa 1, DATOS LISTOS PARA USAR en df.
+save.image("~/Dropbox/Research/PAPER Pato_Genetica/Genome-Wide-Ass_Data/workdata_for_script2_altn3.RData") # con alternativa 3, DATOS LISTOS PARA USAR en df.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Data PREPROCESSING
+data <- as.data.frame(data)
+
+
 # Peligro que variable clase row 509 venia con un -9 (fue corregido en el excel)
 # y = phenotype (variable clase)
 # fid = id sujeto
@@ -83,15 +127,26 @@ save.image("~/Dropbox/Research/PAPER Pato_Genetica/Genome-Wide-Ass_Data/workdata
 # pat
 # mat
 # convertimos la clase en 0 y 1
-data[,1] <- data[,1] - 1
+#data[,1] <- data[,1] - 1
 # convertimos la clase en -1 y 1
-data[,1] <- 2*data[,1] - 3
+data[,1] <- 2*data[,1] - 1
 # convertimos las VI en -1, 0 y 1
-data[,c(2:ncol(data))] <- data[,c(2:ncol(data))] - 1
+#data[,c(2:ncol(data))] <- data[,c(2:ncol(data))] - 1
 
 #data[,6] <- as.factor(data[,6])
-apply(data,2,function(x) sum(is.na(x)))
-data <- data[-c(500), ]  # la variable clase tiene valor -10!!
+apply(data,2,function(x) sum(is.na(x))) # vemos que hay varios NAs
+data <- data[complete.cases(data), ] # quedamos con 586 sujetos 
+
+
+apply(data,2,function(x) sum(x>2, na.rm=TRUE)) # VEMOS SI HYA VALORES MAYORES QUE DOS
+apply(data,2,function(x) sum(x<0, na.rm=TRUE)) # VEMOS SI HYA VALORES MENORES QUE CERO
+
+sum(data[,1] < -1) # vemos si en la variable clase hay valores menores que -1
+sum(data[,1] > 1) # vemos si en la variable clase hay valores menores que -1
+
+
+#data <- data[-c(500), ]  # la variable clase tiene valor -21!!
+df <- data
 
 # drop rows with NAs
 df <- data[complete.cases(data), ] # quedamos con 608 sujetos 
@@ -100,23 +155,47 @@ str(df)
 
 # formula
 # las variables con un signo "-" hay que renombrarlas:
-colnames(df) <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "GSA_rs10974573_G", "GSA_rs564171_G", "rs725124_C", "rs7173347_C")
-n <- names(df[c(2:7)])
-f <- as.formula(paste("PHENOTYPE  ~", paste(n[2:length(n)], collapse = " + ") ) )
+#colnames(df) <- c("PHENOTYPE", "rs7597221_A", "exm2269383_C", "GSA_rs10974573_G", "GSA_rs564171_G", "rs725124_C", "rs7173347_C") # alternativa 1
+colnames(df) <- c("PHENOTYPE", "rs725124_C","rs7173347_C", "rs1060419_A", "rs943099_T", "rs2497446_A", "rs754497_T", "rs7597221_A", "rs11009438_A",
+                  "rs750976_T", "rs2050935_C", "rs35935082_T", "rs12975577_T", "exm2269383_C", 
+                  "GSA_rs10974573_G", "GSA_rs564171_G", "GSA_rs11096969_T", "GSA_rs11130489_T", "GSA_rs474179_C", "GSA_rs868823_G", "GSA_rs12495172_A") # alternativa 3
+
+
 #paste("PHENOTYPE  ~", paste(n[2:length(n)], collapse = " + ") )
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# CORRELATION AMONG PREDICTORS
+library(corrplot)
+library(RColorBrewer)
+#M <- cor(df[c(2:7)]) # para alternativa 1
+M <- cor(df[c(2:21)]) # para alternativa 3
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+
+
+
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # EXAMPLE (not necessary to executing)
+#n <- names(df)[2:7] # alternativa 1
+n <- names(df)[2:21] # alternativa 3
+f <- as.formula(paste("PHENOTYPE  ~", paste(n[2:length(n)], collapse = " + ") ) )
 # Using nural net
 model <- neuralnet(formula = f,
                    data= df,
-                   hidden = 10,
+                   hidden = 41,
                    act.fct = "logistic",
                    linear.output = FALSE,
                    threshold = 0.01,
-                   lifesign = "minimal")
+                   lifesign = "none")
 # Note that I set the argument linear.output to FALSE in order to 
 # tell the model that I want to apply the activation function act.fct and that 
 # I am not doing a regression task
@@ -124,13 +203,15 @@ model <- neuralnet(formula = f,
 plot(model) # son muchas columnas no se entiende  mucho.
 
 # Performance
-preds <- predict(model, df[,c(2:ncol(df))], type="class")
+preds <- predict(model, df[, 2:ncol(df)], type="class")
+
 # a binario
-umbral=0.5
-preds2 <-  ifelse(preds > umbral, 1, 0)
+umbral=0.4
+preds2 <-  ifelse(preds > umbral, 1, -1)
 
 #Calculate Classification accuracy
-table(preds2, df[,1])
+or <- as.data.frame(df[,1])
+table(as.numeric(preds2), as.numeric(or[,1]))
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
@@ -146,7 +227,7 @@ table(preds2, df[,1])
 #set.seed(450)
 df <- as.data.frame(df)
 cv.error <- NULL
-performance <- cross_neural(df, f, k = 10, proport = 0.8, umbral = 0.3, hidden_number = 10)
+performance <- cross_neural(df, f, k = 10, proport = 0.8, umbral = 0.8, hidden_number = 30)
 performance
 
 # resultados ordenados
@@ -155,6 +236,16 @@ performance[which(performance=="NaN")] = NA # en caso que hayan NaN
 resultados <- rbind(apply(performance[,c(2:ncol(performance))], 2, mean, na.rm=TRUE), apply(performance[,c(2:ncol(performance))], 2, sd, na.rm=TRUE))
 rownames(resultados) <- c("mean", "sd")
 round(resultados,2)
+# # # # # # # # # # # #  BOXPLOT RESULTS
+performance <- data.frame(performance)
+performance$k <- factor(performance$k)
+performance_long <- gather(performance, measure, value, acc:ratio, factor_key=TRUE)
+performance_long <-  subset(performance_long, measure != "ratio")
+ggplot(performance_long, aes(x = measure, y = value)) +
+  geom_boxplot() + theme_bw() +
+  stat_summary(fun.y=mean, colour="darkred", geom="point", hape=18, size=3,show_guide = FALSE) +
+  stat_summary(fun.y=mean, colour="red", geom="text", show_guide = FALSE, 
+               vjust=-1.5, aes( label=round(..y.., digits=2)))
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
@@ -162,7 +253,7 @@ round(resultados,2)
 
 # 07-jul-19
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# WHICH IS THE BEST UHRESHOLD?
+# WHICH IS THE BEST THRESHOLD?
 # input: df, f, k, proport, umbral, hidden_number
 #set.seed(450)
 df <- as.data.frame(df)
@@ -221,12 +312,13 @@ message("The best Threshold seems to be: ", paste0(fin[id,"Threshold"])) # 0.8 o
 # 07-jul-19
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # WHICH IS THE BEST NUMBER OF NEURONS TO HIDDEN LAYER?
-# de acuerdo a Hecht-Nielsen (1987), el hidden layer debiera tener 2n+1 nodos = 2*6+1=13 nodos
-nodes <- seq(7,20) # numero de nodos a probar
+# de acuerdo a Hecht-Nielsen (1987), el hidden layer debiera tener 2n+1 nodos = 2*20+1=41 nodos
+nodes <- seq(20,41) # numero de nodos a probar
 rondas <- length(nodes)
 fin <- matrix(NA, ncol=7, nrow=rondas)  # umbral, mean ratio, sd ratio
-for (i in 1:rondas) {
-  performance <- cross_neural(df, f, k = 10, proport = 0.8, umbral = 0.4, hidden_number = nodes[i])
+for (nd in 1:rondas) {
+  #print(nd)
+  performance <- cross_neural(df, f, k = 10, proport = 0.8, umbral = 0.4, hidden_number = nodes[nd])
   
   # obntencion de resultados
   performance[which(performance==0)] = NA  # en caso que hayan ceros, los reemplazamos por NA
@@ -235,7 +327,7 @@ for (i in 1:rondas) {
   rownames(resultados) <- c("mean", "sd")
   
   # almacena resultado que nos interesa
-  fin[i, ] <- c(nodes[i], resultados[1, ])
+  fin[nd, ] <- c(nodes[nd], resultados[1, ])
   
 }
 colnames(fin) <- c("nodes", "acc", "pre", "rec", "f1", "fpr", "ratio")
